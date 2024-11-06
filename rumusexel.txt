@@ -1,0 +1,163 @@
+import csv
+import os
+from datetime import date
+
+# Nama file untuk menyimpan state mesin dan total kapasitas
+STATE_FILENAME = "machine_state.csv"
+
+# Fungsi untuk menyimpan state mesin dan total kapasitas ke file CSV
+def save_state_to_csv(machine_status, total_capacity):
+    with open(STATE_FILENAME, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        for machine, status in machine_status.items():
+            writer.writerow([machine, status])
+        writer.writerow(["total_capacity", total_capacity])
+
+# Fungsi untuk memuat state mesin dan total kapasitas dari file CSV
+def load_state_from_csv():
+    if os.path.exists(STATE_FILENAME):
+        machine_status = {}
+        total_capacity = 0
+        with open(STATE_FILENAME, mode='r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == "total_capacity":
+                    total_capacity = float(row[1])
+                else:
+                    machine_status[row[0]] = row[1] == 'True'
+        return machine_status, total_capacity
+    else:
+        return None, None
+
+# Fungsi untuk menghitung total tenaga yang dihasilkan
+def calculate_total_power(machine_status, machines):
+    total_power = 0
+    for machine, status in machine_status.items():
+        if status:
+            total_power += machines[machine]
+    return total_power
+
+
+# Data awal mesin dan tenaga yang dihasilkan
+machines = {
+    "MDU #01": 1.1, "MDU #02": 1.1, "MDU #03": 1.1, "MDU #04": 1.1, "MDU #05": 1.1, 
+    "MDU #06": 1.1, "MDU #07": 1.1, "GND #01": 0.5, "GND #02": 0.5, "GND #03": 0.6, 
+    "GND #04": 0.6, "GND #05": 0.6, "GND #06": 0.6, "MTS EDG": 0.5, "PNC #01": 1.0, 
+    "PNC #02": 1.0, "PNC #03": 1.0, "PNC #04": 1.0, "PNC #05": 0.7, "PNC #06": 0.3
+}
+
+# Memuat state mesin dari file CSV jika ada
+loaded_machine_status, loaded_total_capacity = machine_state.load_state_from_csv()
+
+# Jika data sudah tersimpan di file, gunakan data tersebut, jika tidak inisialisasi state baru
+if loaded_machine_status and loaded_total_capacity:
+    st.session_state['machine_status'] = loaded_machine_status
+    st.session_state['total_capacity'] = loaded_total_capacity
+else:
+    if 'machine_status' not in st.session_state:
+        st.session_state['machine_status'] = {name: True for name in machines}
+
+    # Hitung total kapasitas awal
+    total_power = machine_state.calculate_total_power(st.session_state['machine_status'], machines)
+    st.session_state['total_capacity'] = round(total_power * 1000)
+
+# Fungsi untuk memvisualisasikan data beban puncak
+def plot_load_vs_capacity(data, total_capacity):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=data.index, y=data['BP'], mode='lines', name='Beban Puncak'))
+    fig.add_trace(go.Scatter(x=data.index, y=[total_capacity] * len(data), 
+                             mode='lines', name='Kapasitas Maksimum Listrik', line=dict(color='green')))
+
+    below_or_equal_capacity = data['BP'].where(data['BP'] <= total_capacity, total_capacity)
+    fig.add_trace(go.Scatter(x=data.index, y=below_or_equal_capacity, mode='lines', 
+                             name='Beban Puncak (Di Bawah Kapasitas)', line=dict(color='green')))
+    
+    above_capacity = data['BP'].where(data['BP'] > total_capacity, total_capacity)
+    fig.add_trace(go.Scatter(x=data.index, y=above_capacity, mode='lines', 
+                             name='Beban Melebihi Kapasitas', line=dict(color='red')))
+    
+    fig.update_layout(title='Beban Puncak vs Kapasitas Listrik', xaxis_title='Tanggal', yaxis_title='Beban Puncak (MW)', showlegend=True)
+    st.plotly_chart(fig, use_container_width=True)
+    # Filter data yang melebihi kapasitas
+    exceeding_capacity_data = data[data['BP'] > total_capacity]
+
+    # Jika ada data yang melebihi kapasitas
+    if not exceeding_capacity_data.empty:
+        # Buat dataframe untuk mencatat tanggal dan nilai BP yang melebihi kapasitas
+        exceeded_df = pd.DataFrame({
+            'Tanggal': exceeding_capacity_data['Date'],
+            'Beban Puncak': exceeding_capacity_data['BP']
+        })
+
+        # Tampilkan dataframe
+        st.subheader("Tanggal dan Beban Puncak yang Melebihi Kapasitas:")
+        st.dataframe(exceeded_df)
+    else:
+        st.write("Tidak ada beban puncak yang melebihi kapasitas.")
+        
+        
+        
+    
+    st.header("Pengelolaan Mesin dan Beban Puncak ⚙️")
+    st.write("Pengelolaan mesin dan beban puncak bertujuan untuk memastikan setiap unit mesin beroperasi secara optimal, terutama saat menghadapi beban puncak. Dalam daftar ini, setiap mesin seperti MDU, GND, PNC, dan MTS EDG memiliki peran penting dalam menjaga stabilitas sistem energi. Pengaturan yang tepat dari masing-masing mesin membantu mengurangi risiko kelebihan beban dan memastikan ketersediaan listrik yang cukup. Dengan informasi mengenai total listrik yang dapat digunakan, Anda dapat memantau kapasitas energi yang tersedia dan mengoptimalkan alokasi daya secara efektif.")
+    # Membuat dua kolom
+    col1, col2, col3 = st.columns(3)
+
+    # Menambahkan gambar ke kolom pertama
+    with col1:
+        st.image("images/mesin1.png", caption="", use_column_width=True)
+
+    # Menambahkan gambar ke kolom kedua
+    with col2:
+        st.image("images/mesin2.png", caption="Sumber: PLTD Panca Bina", use_column_width=True)
+    
+    # Menambahkan gambar ke kolom kedua
+    with col3:
+        st.image("images/mesin3.png", caption="", use_column_width=True)
+    
+    
+    
+    st.subheader("Note:")
+    st.markdown(
+        """
+        <ul>
+            <li> Anda dapat mengaktifkan dan menonaktifkan mesin-mesin di bawah sesuai keinginan Anda. </li>
+            <li> Setelah memilih mesin, akan terlihat total listrik yang dapat digunakan (MW). </li>
+        </ul>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Membagi mesin dalam grid 5x4
+    cols = st.columns(5)
+    machines_list = list(machines.keys())
+    for i, machine in enumerate(machines_list):
+        with cols[i % 5]:
+            st.session_state['machine_status'][machine] = st.checkbox(
+                label=machine, value=st.session_state['machine_status'][machine], key=f"checkbox_{machine}"
+            )
+            
+
+    # Hitung ulang total kapasitas berdasarkan status mesin terbaru
+    total_power = machine_state.calculate_total_power(st.session_state['machine_status'], machines)
+    st.session_state['total_capacity'] = round(total_power * 1000)
+
+    st.subheader(f"Total Listrik yang Dapat Digunakan: {st.session_state['total_capacity']} MW")
+
+    # Kolom 2: Menampilkan data beban puncak
+    st.subheader("Data Beban Puncak")
+    # Contoh data beban puncak
+    if 'data' not in st.session_state:
+        # Data beban puncak tiruan (ganti dengan data yang sebenarnya jika ada)
+        date_range = pd.date_range(start="2024-01-01", periods=30, freq='D')
+        st.session_state['data'] = pd.DataFrame({'Date': date_range, 'BP': [90 + i * 0.5 for i in range(30)]})
+        st.session_state['data'].set_index('Date', inplace=True)
+
+    # Tampilkan data beban puncak
+    st.dataframe(st.session_state['data'].head())
+
+    # Plot beban puncak vs kapasitas
+    plot_load_vs_capacity(st.session_state['data'], st.session_state['total_capacity'])
+
+    # Simpan status mesin ke file CSV
+    machine_state.save_state_to_csv(st.session_state['machine_status'], st.session_state['total_capacity'])
