@@ -4,10 +4,21 @@ cookie:
   name: some_cookie_name
 credentials:
   usernames:
-    admin:
-      email: admin@gmail.com
+    admin_fajar:
+      email: admin_fajar@gmail.com
       failed_login_attempts: 0
       first_name: Admin
-      last_name: Baru
-      logged_in: false
+      last_name: Fajar
+      logged_in: true
       password: $2b$12$OuGJENoQa1IbGLu9Ok5j1.TZxH6Ud1zEqTWIy1WGczJCnmeRvJm4W
+      roles:
+      - admin
+    user_abi:
+      email: user_abi@gmail.com
+      failed_login_attempts: 0
+      first_name: User
+      last_name: Abi
+      logged_in: false
+      password: $2b$12$lTH7QuquZ2/JNAl6mcuo3.Tgg/bW5K2QogoVjLiGXpRwHEuklKuOe
+      roles:
+      - user

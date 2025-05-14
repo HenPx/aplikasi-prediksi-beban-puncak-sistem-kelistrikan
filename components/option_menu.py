@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 
-def create_option_menu():
+def create_option_menu(role):
     # Tampilkan logo PLN di sidebar
     st.markdown(
         """
@@ -25,20 +25,37 @@ def create_option_menu():
     )
     with st.sidebar:
         st.image("images/logoPLN.png")
- 
+
     # Tambahkan tulisan "PLN" di samping lo go
     st.sidebar.markdown("<p style='font-size: 25px; text-align: center; font-weight: bold; color: #ffffff;'>PT. PLN UID Bali</p>", unsafe_allow_html=True)
 
-    selected = option_menu(
-        menu_title="Menu",
-        options=["Beranda", "Analysis", "Prediksi", "Mesin"],
-        icons=["house", "graph-up", "clipboard2-data", "robot"],
-        menu_icon="cast",
-        default_index=0,
-        orientation="vertical",
-        styles={
-            "menu-title": {"font-size": "20px"},
-            "nav-link": {"font-size": "15px"},
-        }
-    )
-    return selected
+    if role == "admin":
+        selected = option_menu(
+            menu_title="Menu",
+            options=["Beranda", "Analysis", "Prediksi", "Mesin", "Form Pengisian", "FaQ"],
+            icons=["house", "graph-up", "clipboard2-data", "robot", "pencil-square", "info-square"],
+            menu_icon="cast",
+            default_index=0,
+            orientation="vertical",
+            styles={
+                "menu-title": {"font-size": "20px"},
+                "nav-link": {"font-size": "15px"},
+            }
+        )
+        return selected
+    elif role == "user":
+        selected = option_menu(
+            menu_title="Menu",
+            options=["Beranda","Form Pengisian", "Mesin", "FaQ"],
+            icons=["house","pencil-square", "robot", "info-square"],
+            menu_icon="cast",
+            default_index=0,
+            orientation="vertical",
+            styles={
+                "menu-title": {"font-size": "20px"},
+                "nav-link": {"font-size": "15px"},
+            }
+        )
+        return selected
+    else:
+        st.error("Tidak dikenali")

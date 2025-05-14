@@ -1,93 +1,11 @@
 import csv
 import os
-from datetime import date
 import pandas as pd
 import plotly.graph_objs as go
 import streamlit as st
-from pandas._libs.tslibs.nattype import NaTType
-
-
 
 # Nama file untuk menyimpan state mesin dan total kapasitas
 STATE_FILENAME = "machine_state.csv"
-HISTORY_FILENAME = "machine_history.csv"
-
-def display_and_delete_history():
-    # Check if the history file exists
-    if not os.path.exists(HISTORY_FILENAME):
-        st.write("History belum ada. Membuat file baru.")
-        with open(HISTORY_FILENAME, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Mesin', 'Tanggal Mulai Nonaktif', 'Tanggal Selesai Nonaktif', 'Deskripsi'])
-        return
-
-    # Load data from CSV to DataFrame
-    df = pd.read_csv(HISTORY_FILENAME)
-
-    if df.empty:
-        st.write("History belum ada atau file kosong.")
-        return
-
-    # Convert date columns to datetime, ignoring errors to get NaT for invalid dates
-    df['Tanggal Mulai Nonaktif'] = pd.to_datetime(df['Tanggal Mulai Nonaktif'], format='%d-%m-%Y', errors='coerce')
-    df['Tanggal Selesai Nonaktif'] = pd.to_datetime(df['Tanggal Selesai Nonaktif'], format='%d-%m-%Y', errors='coerce')
-
-    # Drop rows with NaT in either date column without affecting other columns
-    df = df.dropna(subset=['Tanggal Mulai Nonaktif', 'Tanggal Selesai Nonaktif'])
-
-    if df.empty:
-        st.write("History kosong setelah menghapus entri yang tidak valid.")
-        return
-
-    # Dropdown for selecting machine
-    mesin_list = df['Mesin'].unique()
-    selected_machine = st.selectbox("Pilih Mesin", mesin_list)
-
-    # Filter DataFrame by selected machine
-    filtered_df = df[df['Mesin'] == selected_machine]
-
-    # Dropdown for selecting date range
-    date_options = filtered_df.apply(lambda row: f"{row['Tanggal Mulai Nonaktif'].strftime('%d-%m-%Y')} - {row['Tanggal Selesai Nonaktif'].strftime('%d-%m-%Y')}", axis=1)
-    selected_date_range = st.selectbox("Pilih Tanggal", date_options)
-
-    # Display selected entry's description
-    selected_entry = filtered_df[date_options == selected_date_range].iloc[0]
-    st.write(f"Deskripsi: {selected_entry['Deskripsi']}")
-
-
-
-# Fungsi untuk menyimpan history nonaktif ke file CSV
-def save_history_to_csv(machine_name, start_date, end_date, description):
-    # Format tanggal sesuai dengan 'dd-mm-yyyy'
-    
-    # Cek apakah file sudah ada atau belum
-    file_exists = os.path.isfile(HISTORY_FILENAME)
-    
-    # Buka file CSV dan tulis data
-    with open(HISTORY_FILENAME, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        
-        # Jika file belum ada, tambahkan header terlebih dahulu
-        if not file_exists:
-            writer.writerow(['Mesin', 'Tanggal Mulai Nonaktif', 'Tanggal Selesai Nonaktif', 'Deskripsi'])
-        
-        # Tulis data history
-        writer.writerow([machine_name, start_date, end_date, description])
-
-def load_history_from_csv():
-    history = []
-    if os.path.exists(HISTORY_FILENAME):
-        with open(HISTORY_FILENAME, mode='r') as file:
-            reader = csv.reader(file)
-            next(reader)  # Skip header
-            for row in reader:
-                machine, start_date_str, end_date_str, desc = row
-                # Gunakan format='mixed' untuk menangani berbagai format tanggal
-                start_date = pd.to_datetime(start_date_str, format='%d-%m-%Y', errors='coerce').date()
-                end_date = pd.to_datetime(end_date_str, format='%d-%m-%Y', errors='coerce').date()
-                history.append((machine, start_date, end_date, desc))
-    return history
-
 
 
 # Fungsi untuk menyimpan state mesin dan total kapasitas ke file CSV
@@ -122,108 +40,44 @@ def calculate_total_power(machine_status, machines):
             total_power += machines[machine]
     return total_power
 
-# Fungsi untuk mendapatkan total kapasitas berdasarkan status mesin pada rentang tanggal tertentu
-def get_total_capacity_on_date(machine_status, machines, nonactive_history, current_date):
-    # Pastikan current_date adalah datetime.date, konversi jika perlu
-    if isinstance(current_date, pd.Timestamp):
-        current_date = current_date.date()
-    
-    # Mulai dengan kapasitas total saat ini (mesin yang aktif)
-    active_capacity = sum([machines[machine] for machine, status in machine_status.items() if status])
 
-    # Cek apakah ada mesin yang nonaktif pada tanggal tersebut dan kurangi kapasitas
-    for machine, start_date, end_date, _ in nonactive_history:
-        # Perbandingan hanya dilakukan jika start_date dan end_date bertipe datetime.date
-        if isinstance(start_date, date) and isinstance(end_date, date):
-            # Jika current_date berada dalam rentang penonaktifan, kurangi kapasitas mesin
-            if start_date <= current_date <= end_date:
-                active_capacity -= machines[machine]
-
-    return active_capacity * 1000  # Kapasitas dalam MW
-
-# Fungsi untuk memvisualisasikan data beban puncak dengan mempertimbangkan penonaktifan mesin
-# def plot_load_vs_capacity(data, machines, machine_status, nonactive_history):
-#     # Membaca data dari file CSV yang diberikan
-#     data = pd.read_csv('BP_2024.csv')
-
-#     # Konversi kolom Date menjadi tipe datetime
-#     data['Date'] = pd.to_datetime(data['Date'], format='%d-%m-%Y', errors='coerce')
-
-#     fig = go.Figure()
-
-#     capacities = []
-#     for current_date in data['Date']:
-#         if isinstance(current_date, pd.Timestamp):
-#             current_date = current_date.date()
-
-#         total_capacity = get_total_capacity_on_date(machine_status, machines, nonactive_history, current_date)
-#         capacities.append(total_capacity)
-    
-#     capacity_df = pd.DataFrame({
-#         'Date': data['Date'],
-#         'Capacity': capacities
-#     })
-#     capacity_df.to_csv('calculated_capacity.csv', index=False)  # Simpan kapasitas ke file CSV
-
-
-#     fig.add_trace(go.Scatter(x=data['Date'], y=data['BP'], mode='lines', name='Beban Puncak'))
-
-#     fig.add_trace(go.Scatter(x=data['Date'], y=capacities, mode='lines', name='Kapasitas Maksimum Listrik', line=dict(color='green')))
-
-#     below_or_equal_capacity = data['BP'].where(data['BP'] <= capacities, capacities)
-#     fig.add_trace(go.Scatter(x=data['Date'], y=below_or_equal_capacity, mode='lines', name='Beban Puncak (Di Bawah Kapasitas)', line=dict(color='green')))
-
-#     above_capacity = data['BP'].where(data['BP'] > capacities, capacities)
-#     fig.add_trace(go.Scatter(x=data['Date'], y=above_capacity, mode='lines', name='Beban Melebihi Kapasitas', line=dict(color='red')))
-
-#     # Update layoutz
-#     fig.update_layout(title='Beban Puncak vs Kapasitas Listrik', xaxis_title='Tanggal', yaxis_title='Beban Puncak (MW)', showlegend=True)
-#     st.plotly_chart(fig, use_container_width=True)
-
-#     # Filter data yang melebihi kapasitas
-#     exceeding_capacity_data = data[data['BP'] > capacities]
-
-#     # Jika ada data yang melebihi kapasitas
-#     if not exceeding_capacity_data.empty:
-#         # Buat dataframe untuk mencatat tanggal dan nilai BP yang melebihi kapasitas
-#         exceeded_df = pd.DataFrame({
-#             'Tanggal': exceeding_capacity_data.index,
-#             'Beban Puncak': exceeding_capacity_data['BP']
-#         })
-
-#         # Tampilkan dataframe
-#         st.subheader("Tanggal dan Beban Puncak yang Melebihi Kapasitas:")
-#         st.dataframe(exceeded_df)
-#     else:
-#         st.write("Tidak ada beban puncak yang melebihi kapasitas.")
 
 # Fungsi untuk memvisualisasikan data beban puncak
-def plot_load_vs_capacity_old(data, total_capacity):
+def plot_load_vs_capacity_old(data, data_total_capacity):
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data.index, y=data['BP'], mode='lines', name='Beban Puncak'))
-    fig.add_trace(go.Scatter(x=data.index, y=[total_capacity] * len(data), 
-                             mode='lines', name='Kapasitas Maksimum Listrik', line=dict(color='green')))
+    fig.add_trace(go.Scatter(x=data['Date'], y=data['BP'], mode='lines', name='Beban Puncak'))
+    fig.add_trace(go.Scatter(x=data['Date'], y=data_total_capacity['Power'], 
+                            mode='lines', name='Kapasitas Maksimum Listrik', line=dict(color='green')))
+    # Garis Merah jika BP > Kapasitas Maksimum
+    exceed_mask = data['BP'] > data_total_capacity['Power']
 
-    below_or_equal_capacity = data['BP'].where(data['BP'] <= total_capacity, total_capacity)
-    fig.add_trace(go.Scatter(x=data.index, y=below_or_equal_capacity, mode='lines', 
-                             name='Beban Puncak (Di Bawah Kapasitas)', line=dict(color='green')))
-    
-    above_capacity = data['BP'].where(data['BP'] > total_capacity, total_capacity)
-    fig.add_trace(go.Scatter(x=data.index, y=above_capacity, mode='lines', 
-                             name='Beban Melebihi Kapasitas', line=dict(color='red')))
-    
+    if exceed_mask.any():
+        fig.add_trace(go.Scatter(
+            x=data['Date'][exceed_mask],
+            y=data['BP'][exceed_mask],
+            mode='lines',
+            name='BP Melebihi Kapasitas',
+            line=dict(color='red')
+        ))
+
     fig.update_layout(title='Beban Puncak vs Kapasitas Listrik', xaxis_title='Tanggal', yaxis_title='Beban Puncak (MW)', showlegend=True)
     st.plotly_chart(fig, use_container_width=True)
-    # Filter data yang melebihi kapasitas
-    exceeding_capacity_data = data[data['BP'] > total_capacity]
+    # # Filter data yang melebihi kapasitas
+    exceeding_capacity_data = data[data['BP'] > data_total_capacity['Power']]
 
-    # Jika ada data yang melebihi kapasitas
+    # # Jika ada data yang melebihi kapasitas
     if not exceeding_capacity_data.empty:
         # Buat dataframe untuk mencatat tanggal dan nilai BP yang melebihi kapasitas
         exceeded_df = pd.DataFrame({
             'Tanggal': exceeding_capacity_data['Date'],
-            'Beban Puncak': exceeding_capacity_data['BP']
+            'Beban Puncak': exceeding_capacity_data['BP'],
+            'Maksimal Kapasitas': data_total_capacity['Power'],
+            'Keterangan': data_total_capacity['Description'],
+            'List Mesin NonAktif': data_total_capacity['List Machine NonAktif']
         })
+        
+        # Delete baris yang none
+        exceeded_df = exceeded_df[~exceeded_df['Tanggal'].isna()]
 
         # Tampilkan dataframe
         st.subheader("Tanggal dan Beban Puncak yang Melebihi Kapasitas:")
