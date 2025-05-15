@@ -17,6 +17,7 @@ def load_form():
     
     st.dataframe(st.session_state['data'])
     df = pd.read_csv(st.session_state['data_file_name'])
+    df_with_machine = pd.read_csv(st.session_state['data_with_machine'])
     
     tabs = st.tabs(["Tambah Data", "Edit Data", "Hapus Data"])
 
@@ -36,9 +37,14 @@ def load_form():
                     with open(st.session_state['data_file_name'], 'a', newline='') as file:
                         writer = csv.writer(file)
                         writer.writerow([input_date, choose_value])
+                    with open(st.session_state['data_with_machine'], 'a', newline='') as file:
+                        writer = csv.writer(file)
+                        max_power = 16600
+                        writer.writerow([input_date, choose_value, max_power, "Mesin Aktif", "Tidak Ada"])
                         st.session_state["add_new_data"] = False
                         st.success("Data berhasil ditambahkan.")
                         st.rerun()
+                
 
     with tabs[1]:
         if st.button("Edit Data", key="edit_data"):
@@ -55,6 +61,8 @@ def load_form():
                     st.success("Tanggal ditemukan dalam data.")
                     df.loc[df['Date'] == input_date, 'BP'] = input_value
                     df.to_csv(st.session_state['data_file_name'], index=False)
+                    df_with_machine.loc[df_with_machine['Date'] == input_date, 'BP'] = input_value
+                    df_with_machine.to_csv(st.session_state['data_with_machine'], index=False)
                     st.session_state["edit_new_data"] = False
                     st.success("Data berhasil diedit.")
                     st.rerun()
@@ -72,6 +80,8 @@ def load_form():
                 else:
                     df = df[df['Date'] != input_date]
                     df.to_csv(st.session_state['data_file_name'], index=False)
+                    df_with_machine = df_with_machine[df_with_machine['Date'] != input_date]
+                    df_with_machine.to_csv(st.session_state['data_with_machine'], index=False)
                     st.session_state["delete_new_data"] = False
                     st.success("Data berhasil dihapus.")
                     st.rerun()

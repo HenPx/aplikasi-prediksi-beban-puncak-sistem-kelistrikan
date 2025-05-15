@@ -5,6 +5,7 @@ from utils import machine_state
 from components.option_menu import create_option_menu
 from datetime import datetime
 
+
 import streamlit_authenticator as stauth
 import streamlit as st
 
@@ -23,7 +24,7 @@ with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 # Pre-hashing all plain text passwords once
-# stauth.Hasher.hash_passwords(config['credentials'])
+stauth.Hasher.hash_passwords(config['credentials'])
 
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -33,6 +34,8 @@ authenticator = stauth.Authenticate(
 )
 
 
+
+    
 # Fungsi untuk memuat data default
 def load_default_data():
     try:
@@ -73,46 +76,15 @@ with col3:
 st.markdown("---")
 
 
+
 def main(role):
     #  Apabila user tidak aktif dalam waktu tertentu, maka session state authentication_status akan di set False
-    time_limit = 999999999  # dalam detik
-    current_time = datetime.now()
-
-    if 'last_active' not in st.session_state:
-        st.session_state['last_active'] = current_time
-
-
-    # Hitung selisih waktu dalam detik
-    time_diff = (current_time - st.session_state['last_active']).total_seconds()
-
-    # st.write(f"Last Active: {st.session_state['last_active'].strftime('%H:%M:%S')}")
-    # st.write(f"Current Time: {current_time.strftime('%H:%M:%S')}")
-    # st.write(f"Time Difference: {time_diff} seconds")
-    
-    # Jika selisih waktu melebihi `time_limit`, maka logout
-    if time_diff > time_limit:
-        # membuat state untuk bertanya apakah user ingin menambah waktu aktif
-        # buat countdown untuk menunggu jawaban user 10 detik
-        st.warning("Session akan berakhir dalam 15 detik. Apakah Anda ingin memperpanjang waktu aktif?")
-        time_ask = 15 
-        time_diff = time_diff - time_limit
-        st.write(f"Countdown: {time_diff} seconds")
-        if st.button("Tambah waktu aktif", key="add_time"):
-            st.session_state['last_active'] = current_time
-            
-            
-        if time_diff > time_ask:   
-            if st.session_state.get('authentication_status'):
-                authenticator.logout('leave', 'unrendered', key='leaves')
-            st.warning("Session expired. Please log in again.")
-            st.session_state['last_active'] = current_time
-    else:
-        st.session_state['last_active'] = current_time
     
     
     # Sidebar menu
     with st.sidebar:
         selected = create_option_menu(role)
+
 
     # Inisialisasi session state untuk data jika belum ada
     if 'data' not in st.session_state:
@@ -197,22 +169,78 @@ def main(role):
     elif selected == "FaQ":
         faq()
     
+
+def main_admin():
+    st.write("anda admin")
     
-authenticator.login()
+def main_user():
+    st.write("anda user")
+    
 
-if st.session_state.get('authentication_status'):
-    get_roles = str(st.session_state.get('roles')).replace("[", "").replace("]", "").replace("'", "")
-    authenticator.logout('Logout', 'sidebar', key='leave')
 
-    with open('config.yaml', 'w') as file:
-        yaml.dump(config, file, default_flow_style=False)
+time_limit = 7  # dalam detik
+current_time = datetime.now()
+
+if 'last_active' not in st.session_state:
+    st.session_state['last_active'] = current_time
+if 'user_online' not in st.session_state:
+    st.session_state['user_online'] = True
+if 'user_allowed' not in st.session_state:
+    st.session_state['user_allowed'] = False
+# Hitung selisih waktu dalam detik
+time_diff = (current_time - st.session_state['last_active']).total_seconds()
+
+st.write(f"Last Active: {st.session_state['last_active'].strftime('%H:%M:%S')}")
+st.write(f"Current Time: {current_time.strftime('%H:%M:%S')}")
+st.write(f"Time Difference: {time_diff} seconds")
+# Jika selisih waktu melebihi `time_limit`, maka logout
+if time_diff > time_limit:
+    # membuat state untuk bertanya apakah user ingin menambah waktu aktif
+    # buat countdown untuk menunggu jawaban user 10 detik
+    st.warning("Session akan berakhir dalam 60 detik. Apakah Anda ingin memperpanjang waktu aktif?")
+    time_ask = 30
+    time_diff = time_diff - time_limit
+    st.write(f"Countdown: {time_diff} seconds")
+    if st.button("Tambah waktu aktif", key="add_time"):
+        st.session_state['user_online'] = True
+        st.session_state['last_active'] = current_time
         
-    if get_roles:
-        main(get_roles)
-    else:
-        st.error("Anda tidak dikenali. Silakan hubungi admin.")
-elif st.session_state.get('authentication_status') is False:
-    authenticator.logout()
-    st.error('Username/password is incorrect')
-elif st.session_state.get('authentication_status') is None:
-    st.warning('Please enter your username and password')
+
+        
+    if time_diff > time_ask:   
+        st.session_state['authentication_status'] = False
+        st.warning("Session expired. Please log in again.")
+        st.session_state['last_active'] = current_time
+        st.session_state['user_online'] = False
+        st.session_state['user_allowed'] = False
+        st.rerun()
+else:
+    st.session_state['last_active'] = current_time
+
+
+
+
+if st.session_state['user_allowed']:
+    st.write(f"status: {st.session_state['authentication_status']}")
+    if st.session_state.get('authentication_status'):
+        get_roles = str(st.session_state.get('roles')).replace("[", "").replace("]", "").replace("'", "")
+        authenticator.logout('Logout', 'sidebar')
+        st.write(get_roles)
+        with open('config.yaml', 'w') as file:
+            yaml.dump(config, file, default_flow_style=False)
+            
+        if get_roles:
+            main(get_roles)
+        else:
+            st.error("Anda tidak dikenali. Silakan hubungi admin.")
+    elif st.session_state.get('authentication_status') is False:
+        authenticator.login()
+        st.error('Username/password is incorrect')
+    elif st.session_state.get('authentication_status') is None:
+        st.warning('Please enter your username and password')
+else:
+    if st.button("Masuk", key="login"):
+        st.session_state['user_allowed']= True
+        st.session_state['authentication_status'] = False
+        st.session_state['user_online'] = False
+        
