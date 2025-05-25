@@ -175,8 +175,24 @@ def main(role):
             st.session_state['data_file_name'] = 'Save_Data.csv'
         except FileNotFoundError:
             st.error("Belum ada data yang di upload.")
-
-    
+            
+    with st.sidebar:
+        if st.button("Export Data to Excel", key="export_data"):
+            # Download data to Excel
+            if st.session_state['data'] is not None:
+                # Dowload data to Excel
+                st.session_state['data'].to_excel("Exported_Data.xlsx", index=False)
+                with open("Exported_Data.xlsx", "rb") as file:
+                    st.download_button(
+                        label="Download Data",
+                        data=file,
+                        file_name="Exported_Data.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                
+                st.success("Data berhasil diekspor ke Excel.")
+            else:
+                st.error("Tidak ada data untuk diekspor.")
     
     # Landing Page
     if selected == "Beranda":
@@ -194,8 +210,8 @@ def main(role):
     elif selected == "Form Pengisian":
         load_form()
     # FaQ Page
-    elif selected == "FaQ":
-        faq()
+    # elif selected == "FaQ":
+    #     faq()
     
     
 authenticator.login()

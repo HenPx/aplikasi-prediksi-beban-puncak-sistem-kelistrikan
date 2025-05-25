@@ -106,13 +106,13 @@ def load_machine():
                     st.session_state["turn_off_machine"] = False
                     st.rerun()
     with tabs[1]:
-        if st.button("Form menghidupkan daya mesin", key="on_machine"):
+        if st.button("Form edit daya mesin", key="on_machine"):
             st.session_state["turn_on_machine"] = True
             
         if st.session_state["turn_on_machine"]:
-            choose_start_date = st.date_input("Pilih tanggal mulai aktif: ", format="DD/MM/YYYY")
+            choose_start_date = st.date_input("Pilih tanggal mulai: ", format="DD/MM/YYYY")
             input_start_date = pd.to_datetime(choose_start_date, format="%d-%m-%Y")
-            choose_end_date = st.date_input("Pilih tanggal selesai aktif: ", format="DD/MM/YYYY")
+            choose_end_date = st.date_input("Pilih tanggal selesai : ", format="DD/MM/YYYY")
             input_end_date = pd.to_datetime(choose_end_date, format="%d-%m-%Y")
             input_description = st.text_input("Masukkan keterangan: ", value="Mesin Aktif")
             input_new_power = st.session_state['total_capacity']

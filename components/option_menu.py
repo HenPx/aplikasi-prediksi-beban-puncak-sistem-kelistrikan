@@ -32,8 +32,8 @@ def create_option_menu(role):
     if role == "admin":
         selected = option_menu(
             menu_title="Menu",
-            options=["Beranda", "Analysis", "Prediksi", "Mesin", "Form Pengisian", "FaQ"],
-            icons=["house", "graph-up", "clipboard2-data", "robot", "pencil-square", "info-square"],
+            options=["Beranda", "Analysis", "Prediksi", "Mesin", "Form Pengisian"],
+            icons=["house", "graph-up", "clipboard2-data", "robot", "pencil-square"],
             menu_icon="cast",
             default_index=0,
             orientation="vertical",
@@ -46,8 +46,8 @@ def create_option_menu(role):
     elif role == "user":
         selected = option_menu(
             menu_title="Menu",
-            options=["Beranda","Form Pengisian", "Mesin", "FaQ"],
-            icons=["house","pencil-square", "robot", "info-square"],
+            options=["Beranda","Form Pengisian", "Mesin"],
+            icons=["house","pencil-square", "robot"],
             menu_icon="cast",
             default_index=0,
             orientation="vertical",

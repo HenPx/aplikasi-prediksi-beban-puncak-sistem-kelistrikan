@@ -47,7 +47,7 @@ def load_analysis():
         st.header("Analisis Data Beban Puncak 📈")
         st.write("Analisis beban puncak dapat membantu Anda memahami pola penggunaan energi secara mendalam. Dengan mengumpulkan dan menganalisis data seperti waktu penggunaan dan faktor-faktor lainnya, kami dapat mengidentifikasi tren yang memengaruhi beban puncak. Melalui visualisasi data yang mudah dipahami, Anda dapat melihat fluktuasi penggunaan energi dan memprediksi beban di masa depan. Layanan ini dirancang untuk mendukung keputusan yang lebih baik dalam manajemen energi, perencanaan kapasitas, dan strategi optimalisasi penggunaan energi.")
         sections = ["Daftar Isi", "Data Wrangling", "Exploratory Data Analysis", "Rata-Rata Beban"]
-        create_toc(sections)
+        # create_toc(sections)
         # Mengonversi kolom 'Date' menjadi datetime dan mengatur sebagai index
         try:
             st.session_state['data']['Date'] = pd.to_datetime(st.session_state['data']['Date'], dayfirst=True, errors='coerce')
@@ -55,37 +55,37 @@ def load_analysis():
         except KeyError:
             st.error("Kolom 'Date' tidak ditemukan di dataset.")
 
-        # Data Wrangling Section
-        st.markdown("## Data Wrangling ⌛")
-        st.subheader("Display Data")
-        st.write("Berikut adalah data yang Anda gunakan. Untuk mengubah data, silakan pergi ke menu Landing Page.")
-        st.dataframe(st.session_state['data'].head())
+        # # Data Wrangling Section
+        # st.markdown("## Data Wrangling ⌛")
+        # st.subheader("Display Data")
+        # st.write("Berikut adalah data yang Anda gunakan. Untuk mengubah data, silakan pergi ke menu Landing Page.")
+        # st.dataframe(st.session_state['data'].head())
 
-        st.subheader("Assessing Data")
+        # st.subheader("Assessing Data")
 
-        st.write("Proses menilai kualitas data meliputi pencarian nilai yang hilang dan data duplikat.")
-        missing_values = st.session_state['data'].isnull().sum()
+        # st.write("Proses menilai kualitas data meliputi pencarian nilai yang hilang dan data duplikat.")
+        # missing_values = st.session_state['data'].isnull().sum()
         
-        if 'BP' in st.session_state['data'].columns and 'Year' in st.session_state['data'].columns:
-            drop_colum = st.session_state['data'].drop(['BP', 'Year'], axis=1)
-        elif 'BP' in st.session_state['data'].columns:
-            drop_colum = st.session_state['data'].drop('BP', axis=1)
-        else:
-            drop_colum = st.session_state['data']  # Jika tidak ada kolom 'BP', biarkan DataFrame tetap utuh
+        # if 'BP' in st.session_state['data'].columns and 'Year' in st.session_state['data'].columns:
+        #     drop_colum = st.session_state['data'].drop(['BP', 'Year'], axis=1)
+        # elif 'BP' in st.session_state['data'].columns:
+        #     drop_colum = st.session_state['data'].drop('BP', axis=1)
+        # else:
+        #     drop_colum = st.session_state['data']  # Jika tidak ada kolom 'BP', biarkan DataFrame tetap utuh
 
-        duplicate_data = drop_colum.duplicated().sum()
-        st.write(f"Jumlah nilai yang hilang per kolom:\n{missing_values}")
-        st.write(f"Jumlah data duplikat: {duplicate_data}")
+        # duplicate_data = drop_colum.duplicated().sum()
+        # st.write(f"Jumlah nilai yang hilang per kolom:\n{missing_values}")
+        # st.write(f"Jumlah data duplikat: {duplicate_data}")
         
 
-        st.subheader("Cleaning Data")
-        st.write("Proses membersihkan data dengan memperbaiki atau menghapus data yang tidak konsisten, hilang, atau duplikat untuk meningkatkan kualitas dan akurasi dataset.")
-        if missing_values.any() or duplicate_data > 0:
-                st.session_state['data'] = st.session_state['data'].drop_duplicates()
-                st.session_state['data'] = st.session_state['data'].interpolate()   
-                st.write("Data berhasil dibersihkan.")
-        else:
-            st.write("Data sudah bersih.")
+        # st.subheader("Cleaning Data")
+        # st.write("Proses membersihkan data dengan memperbaiki atau menghapus data yang tidak konsisten, hilang, atau duplikat untuk meningkatkan kualitas dan akurasi dataset.")
+        # if missing_values.any() or duplicate_data > 0:
+        #         st.session_state['data'] = st.session_state['data'].drop_duplicates()
+        #         st.session_state['data'] = st.session_state['data'].interpolate()   
+        #         st.write("Data berhasil dibersihkan.")
+        # else:
+        #     st.write("Data sudah bersih.")
 
         # Fungsi untuk menumpukkan data berdasarkan tahun
         def plot_data_per_year(data):
