@@ -8,4 +8,4 @@ streamlit==1.38.0
 streamlit_authenticator==0.4.1
 streamlit_folium==0.23.1
 streamlit_option_menu==0.3.6
-
+openpyxl
